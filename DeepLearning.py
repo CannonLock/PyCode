@@ -26,7 +26,21 @@ def train_network():
 
 	train(model, network_input, network_output)
 
-def get_notes():
+def get_note_str(note, duration):
+	return note.nameWithOctave + duration
+
+def get_element_str(el, includeDuration):
+	duration = "-" + str(round(float(el.quarterLength), 3)) if includeDuration else ""
+
+	if isinstance(el, note.Note):
+		return get_note_str(el, duration)
+	elif isinstance(el, note.Rest):
+		return el.name + duration
+	elif isinstance(el, chord.Chord):
+		note_strings = [get_note_str(n, duration) for n in el.notes]
+		return " ".join(sorted(note_strings))
+
+def get_notes(includeDuration = False):
 	""" Get all the notes and chords from the midi files in the ./midi_songs directory """
 	notes = []
 
@@ -44,11 +58,9 @@ def get_notes():
 			except: # file has notes in a flat structure
 				notes_to_parse = midi.flat.notes
 
-			for element in notes_to_parse:
-				if isinstance(element, note.Note):
-					notes.append(str(element.pitch))
-				elif isinstance(element, chord.Chord):
-					notes.append('.'.join(str(n) for n in element.normalOrder))
+			for el in notes_to_parse:
+				if isinstance(el, note.Note) or isinstance(el, chord.Chord) or isinstance(el, note.Rest):
+					notes.append(get_element_str(el, includeDuration))
 
 	np.save("notes", notes)
 
@@ -123,5 +135,5 @@ def train(model, network_input, network_output):
 	model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
 
 if __name__ == '__main__':
-	get_notes()
+	a = get_notes()
 
