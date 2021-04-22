@@ -4,7 +4,14 @@ import torchtext
 import time
 import random
 import pandas as pd
+import numpy as np
+import glob
+import pickle
 from music21 import converter, instrument, note, chord
+
+GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
+
+# TODO : (
 
 def train_network():
 	""" Train a Neural Network to generate music """
@@ -23,27 +30,27 @@ def get_notes():
 	""" Get all the notes and chords from the midi files in the ./midi_songs directory """
 	notes = []
 
-	for file in glob.glob("midi_songs/*.mid"):
-		midi = converter.parse(file)
+	for j in GENRES:
+		for file in glob.glob("../TrainingData/" + j + "/*.mid"):
+			midi = converter.parse(file)
 
-		print("Parsing %s" % file)
+			print("Parsing %s" % file)
 
-		notes_to_parse = None
+			notes_to_parse = None
 
-		try: # file has instrument parts
-			s2 = instrument.partitionByInstrument(midi)
-			notes_to_parse = s2.parts[0].recurse()
-		except: # file has notes in a flat structure
-			notes_to_parse = midi.flat.notes
+			try: # file has instrument parts
+				s2 = instrument.partitionByInstrument(midi)
+				notes_to_parse = s2.parts[0].recurse()
+			except: # file has notes in a flat structure
+				notes_to_parse = midi.flat.notes
 
-		for element in notes_to_parse:
-			if isinstance(element, note.Note):
-				notes.append(str(element.pitch))
-			elif isinstance(element, chord.Chord):
-				notes.append('.'.join(str(n) for n in element.normalOrder))
+			for element in notes_to_parse:
+				if isinstance(element, note.Note):
+					notes.append(str(element.pitch))
+				elif isinstance(element, chord.Chord):
+					notes.append('.'.join(str(n) for n in element.normalOrder))
 
-	with open('data/notes', 'wb') as filepath:
-		pickle.dump(notes, filepath)
+	np.save("notes", notes)
 
 	return notes
 
@@ -70,7 +77,7 @@ def prepare_sequences(notes, n_vocab):
 	n_patterns = len(network_input)
 
 	# reshape the input into a format compatible with LSTM layers
-	network_input = numpy.reshape(network_input, (n_patterns, sequence_length, 1))
+	network_input = np.reshape(network_input, (n_patterns, sequence_length, 1))
 	# normalize input
 	network_input = network_input / float(n_vocab)
 
@@ -116,5 +123,5 @@ def train(model, network_input, network_output):
 	model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
 
 if __name__ == '__main__':
-	train_network()
+	get_notes()
 
