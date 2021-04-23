@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-import torchtext
+#import torchtext
 import time
 import random
 import pandas as pd
@@ -55,10 +55,10 @@ def get_dataset(includeDuration = False, byGenre = False, regenerate = False):
 			return pickle.load(previouslyGenerateDataset)
 		except:
 			print("Re/Creating Music Dataset")
-
+	
 	# Create the data set by converting all the midi files into string vectors
+	
 	dataset = {"total": []}
-
 	for genre in GENRES:
 		for file in glob.glob("./TrainingData/" + genre + "/*.mid"):
 
@@ -187,6 +187,6 @@ def train(model, network_input, network_output):
 	model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
 
 if __name__ == '__main__':
-	songs = get_dataset(regenerate=True)
+	songs = get_dataset(regenerate=False)
 	l = standardize_songs(songs["total"])
-	print("Fart")
+	print("fart")
