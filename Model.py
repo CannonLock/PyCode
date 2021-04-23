@@ -1,3 +1,32 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.autograd import Variable
+
+import sys
+import time
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+import os
+
+# CONSTS
+SAVE_EVERY = 20
+SEQ_SIZE = 25
+RANDOM_SEED = 11
+VALIDATION_SIZE = 0.15
+LR = 1e-3
+N_EPOCHS = 100
+NUM_LAYERS, HIDDEN_SIZE = 1, 150
+DROPOUT_P = 0
+model_type = 'lstm'
+use_cuda = torch.cuda.is_available()
+torch.manual_seed(RANDOM_SEED)
+INPUT = 'data/music.txt'  # Music
+RESUME = False
+CHECKPOINT = 'ckpt_mdl_{}_ep_{}_hsize_{}_dout_{}'.format(model_type, N_EPOCHS, HIDDEN_SIZE, DROPOUT_P)
+
 class MusicRNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, model='gru', num_layers=1):
         super(MusicRNN, self).__init__()
@@ -68,10 +97,10 @@ else:
     losses, v_losses = [], []
     start_epoch = 0
 
-if use_cuda:
-    net.cuda()
-    net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-    cudnn.benchmark = True
+#if use_cuda:
+#    net.cuda()
+#    net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+#    cudnn.benchmark = True
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 loss_function = nn.CrossEntropyLoss()
