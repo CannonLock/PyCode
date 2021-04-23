@@ -91,31 +91,12 @@ def get_dataset(includeDuration = False, byGenre = False, regenerate = False):
 
 	return dataset
 
-def build_vocab(includeDuration = False):
-	""" Get all the notes and chords from the midi files in the ./midi_songs directory """
-	notes = []
+def build_vocab(notes, includeDuration = False):
+	vocab = set()
+	for i in songs:
+		vocab.update(i)
 
-	for j in GENRES:
-		for file in glob.glob("../TrainingData/" + j + "/*.mid"):
-			midi = converter.parse(file)
-
-			print("Parsing %s" % file)
-
-			notes_to_parse = None
-
-			try: # file has instrument parts
-				s2 = instrument.partitionByInstrument(midi)
-				notes_to_parse = s2.parts[0].recurse()
-			except: # file has notes in a flat structure
-				notes_to_parse = midi.flat.notes
-
-			for el in notes_to_parse:
-				if isinstance(el, note.Note) or isinstance(el, chord.Chord) or isinstance(el, note.Rest):
-					notes.append(get_element_str(el, includeDuration))
-
-	np.save("notes_duration:" + str(includeDuration), notes)
-
-	return notes
+	return vocab
 
 def standardize_songs(songs):
 
