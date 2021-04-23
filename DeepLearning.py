@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 import glob
 import pickle
+import
+from torch.autograd import Variable
 from music21 import converter, instrument, note, chord
 
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
@@ -113,6 +115,37 @@ def rand_song_slice(song, slice_number, slice_length):
 
 def slice_to_tensor(vocab, slice):
 	out = torch.zeros(len(seq)).long()
+	for index, element in enumerate(slice):
+		out[i] = vocab[element]
+	return out
+
+def train_song(song, slice_length=100):
+	slice = rand_song_slice(song, slice_length=slice_length)
+	tensor = slice_to_tensor(slice)
+
+	input = tensor[:-1]
+	output = tensor[1:]
+
+	return Variable(input), Variable(output)
+
+def some_pass(seq, target):
+	model.init_hidden() # Zero out the hidden layer
+	model.zero_grad()   # Zero out the gradient
+	some_loss = 0
+
+	for i, c in enumerate(seq):
+		output = model(c)
+		some_loss += loss_function(output, target[i])
+
+	if fit:
+		some_loss.backward()
+		optimizer.step()
+
+	return some_loss.data[0] / len(seq)
+
+def train_model():
+
+
 
 
 if __name__ == '__main__':
