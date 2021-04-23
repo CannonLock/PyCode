@@ -40,7 +40,58 @@ def get_element_str(el, includeDuration):
 		note_strings = [get_note_str(n, duration) for n in el.notes]
 		return " ".join(sorted(note_strings))
 
-def get_notes(includeDuration = False):
+def get_dataset(includeDuration = False, byGenre = False, regenerate = False):
+
+	fileString = "musicDataset_includeDuration=" +\
+							 str(includeDuration) +\
+							 "_byGenre=" +\
+							 str(byGenre) +\
+							 ".pickle"
+
+	# Check if this dataset is already generated
+	if not regenerate:
+		try:
+			previouslyGenerateDataset = open(fileString, "rb")
+			return pickle.load(previouslyGenerateDataset)
+		except:
+			print("Re/Creating Music Dataset")
+
+	# Create the data set by converting all the midi files into string vectors
+	dataset = {"total": []}
+
+	for genre in GENRES:
+		for file in glob.glob("../TrainingData/" + genre + "/*.mid"):
+
+			print("Parsing %s" % file)
+			midi = converter.parse(file)
+
+			try:
+				s2 = instrument.partitionByInstrument(midi)
+				notes_to_parse = s2.parts[0].recurse()
+			except:
+				notes_to_parse = midi.flat.notes
+
+			# Create the song vector
+			song = []
+			for el in notes_to_parse:
+				if isinstance(el, note.Note) or isinstance(el, chord.Chord) or isinstance(el, note.Rest):
+					song.append(get_element_str(el, includeDuration))
+
+			# Add the song to the list
+			if byGenre:
+				if genre in dataset:
+					dataset[genre].append(song)
+				else:
+					dataset[genre] = [song]
+
+			dataset["total"].append(song)
+
+	with open(fileString, "wb") as output:
+		pickle.dump(dataset, output, pickle.HIGHEST_PROTOCOL)
+
+	return dataset
+
+def build_vocab(includeDuration = False):
 	""" Get all the notes and chords from the midi files in the ./midi_songs directory """
 	notes = []
 
@@ -62,16 +113,36 @@ def get_notes(includeDuration = False):
 				if isinstance(el, note.Note) or isinstance(el, chord.Chord) or isinstance(el, note.Rest):
 					notes.append(get_element_str(el, includeDuration))
 
-	np.save("notes", notes)
+	np.save("notes_duration:" + str(includeDuration), notes)
 
 	return notes
 
-def prepare_sequences(notes, n_vocab):
+def standardize_songs(songs):
+
+	max_song_length = max(map(len, songs))
+
+	adjusted_songs = []
+	for song in songs:
+
+		song_length = len(song)
+		full_addition = max_song_length // song_length
+		part_addition = max_song_length % song_length
+
+		adjusted_song = song*full_addition
+		adjusted_song.extend(song[:part_addition])
+
+		adjusted_songs.append(adjusted_song)
+
+	return adjusted_songs
+
+
+def prepare_sequences(notes):
 	""" Prepare the sequences used by the Neural Network """
 	sequence_length = 100
+	vocab_length = len(set(notes))
 
 	# get all pitch names
-	pitchnames = sorted(set(item for item in notes))
+	pitchnames = sorted(set(notes))
 
 	# create a dictionary to map pitches to integers
 	note_to_int = dict((note, number) for number, note in enumerate(pitchnames))
@@ -91,7 +162,7 @@ def prepare_sequences(notes, n_vocab):
 	# reshape the input into a format compatible with LSTM layers
 	network_input = np.reshape(network_input, (n_patterns, sequence_length, 1))
 	# normalize input
-	network_input = network_input / float(n_vocab)
+	network_input = network_input / float(vocab_length)
 
 	network_output = np_utils.to_categorical(network_output)
 
@@ -135,5 +206,6 @@ def train(model, network_input, network_output):
 	model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
 
 if __name__ == '__main__':
-	a = get_notes()
-
+	songs = get_dataset()
+	l = standardize_songs(songs["total"])
+	print("Fart")
