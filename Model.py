@@ -11,6 +11,7 @@ import random
 import matplotlib.pyplot as plt
 import os
 
+
 # CONSTS
 SAVE_EVERY = 20
 SEQ_SIZE = 25
@@ -75,78 +76,77 @@ def some_pass(seq, target, fit=True):
     
     return some_loss.data[0] / len(seq)
 
-# Model
-if RESUME:
-    # Load checkpoint.
-    print('==> Resuming from checkpoint..')
-    assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    
-    checkpoint = torch.load('./checkpoint/' + CHECKPOINT + '.tEP_NUM_SVAED')
-    model = checkpoint['model']
-    loss = checkpoint['loss']
-    v_loss = checkpoint['v_loss']
-    losses = checkpoint['losses']
-    v_losses = checkpoint['v_losses']
-    start_epoch = checkpoint['epoch']
-    
-else:
-    print('==> Building model..')
-    in_size, out_size = len(char_idx), len(char_idx)
-    model = MusicRNN(in_size, HIDDEN_SIZE, out_size, model_type, NUM_LAYERS)
-    loss, v_loss = 0, 0
-    losses, v_losses = [], []
-    start_epoch = 0
-
-#if use_cuda:
-#    net.cuda()
-#    net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-#    cudnn.benchmark = True
-
-optimizer = torch.optim.Adam(model.parameters(), lr=LR)
-loss_function = nn.CrossEntropyLoss()
-
-# Train
-time_since = tic()
-for epoch in range(start_epoch, N_EPOCHS):
-    # Training
-    for i, song_idx in enumerate(train_idxs):
-        this_loss = some_pass(*song_to_seq_target(data[song_idx]))
-        loss += this_loss
+def Train(vocab,songs):
+    if RESUME:
+        # Load checkpoint.
+        print('==> Resuming from checkpoint..')
+        assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
         
-        msg = '\rTraining Epoch: {}, {:.2f}% iter: {} Time: {} Loss: {:.4}'.format(
-             epoch, (i+1)/len(train_idxs)*100, i, toc(time_since), this_loss)
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-    print()
-    losses.append(loss / len(train_idxs))
+        checkpoint = torch.load('./checkpoint/' + CHECKPOINT + '.tEP_NUM_SVAED')
+        model = checkpoint['model']
+        loss = checkpoint['loss']
+        v_loss = checkpoint['v_loss']
+        losses = checkpoint['losses']
+        v_losses = checkpoint['v_losses']
+        start_epoch = checkpoint['epoch']
         
-    # Validation
-    for i, song_idx in enumerate(valid_idxs):
-        this_loss = some_pass(*song_to_seq_target(data[song_idx]), fit=False)
-        v_loss += this_loss
+    else:
+        print('==> Building model..')
+        in_size, out_size = len(vocab), len(vocab)
+        model = MusicRNN(in_size, HIDDEN_SIZE, out_size, model_type, NUM_LAYERS)
+        loss, v_loss = 0, 0
+        losses, v_losses = [], []
+        start_epoch = 0
+
+    #if use_cuda:
+    #    net.cuda()
+    #    net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+    #    cudnn.benchmark = True
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    loss_function = nn.CrossEntropyLoss()
+
+    # Train
+    for epoch in range(start_epoch, N_EPOCHS):
+        # Training
+        for i, song in enumerate(songs):
+            this_loss = some_pass(*song_to_seq_target(vocab,song))
+            loss += this_loss
+            
+            msg = '\rTraining Epoch: {}, {:.2f}% iter: {} Time: {} Loss: {:.4}'.format(
+                epoch, (i+1)/len(songs)*100, i, this_loss)
+            sys.stdout.write(msg)
+            sys.stdout.flush()
+        print()
+        losses.append(loss / len(songs))
+            
+        # Validation
+        # for i, song_idx in enumerate(valid_idxs):
+        #     this_loss = some_pass(*song_to_seq_target(data[song_idx]), fit=False)
+        #     v_loss += this_loss
+            
+        #     msg = '\rValidation Epoch: {}, {:.2f}% iter: {} Time: {} Loss: {:.4}'.format(
+        #         epoch, (i+1)/len(valid_idxs)*100, i, toc(time_since), this_loss)
+        #     sys.stdout.write(msg)
+        #     sys.stdout.flush()
+        # print()
+        # v_losses.append(v_loss / len(valid_idxs))
         
-        msg = '\rValidation Epoch: {}, {:.2f}% iter: {} Time: {} Loss: {:.4}'.format(
-             epoch, (i+1)/len(valid_idxs)*100, i, toc(time_since), this_loss)
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-    print()
-    v_losses.append(v_loss / len(valid_idxs))
-    
-    # Save checkpoint.
-    if epoch % SAVE_EVERY == 0 and start_epoch != epoch or epoch == N_EPOCHS - 1:
-        print('=======>Saving..')
-        state = {
-            'model': model.module if use_cuda else model,
-            'loss': losses[-1],
-            'v_loss': v_losses[-1],
-            'losses': losses,
-            'v_losses': v_losses,
-            'epoch': epoch,
-        }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-#         torch.save(state, './checkpoint/ckpt.t%s' % epoch)
-        torch.save(state, './checkpoint/' + CHECKPOINT + '.t%s' % epoch)
-    
-    # Reset loss
-    loss, v_loss = 0, 0
+        # Save checkpoint.
+        if epoch % SAVE_EVERY == 0 and start_epoch != epoch or epoch == N_EPOCHS - 1:
+            print('=======>Saving..')
+            state = {
+                'model': model.module if use_cuda else model,
+                'loss': losses[-1],
+                'v_loss': v_losses[-1],
+                'losses': losses,
+                'v_losses': v_losses,
+                'epoch': epoch,
+            }
+            if not os.path.isdir('checkpoint'):
+                os.mkdir('checkpoint')
+    #         torch.save(state, './checkpoint/ckpt.t%s' % epoch)
+            torch.save(state, './checkpoint/' + CHECKPOINT + '.t%s' % epoch)
+        
+        # Reset loss
+        loss, v_loss = 0, 0
