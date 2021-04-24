@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import glob
 import pickle
+import os
 from music21 import converter, instrument, note, chord
 
 
@@ -20,13 +21,12 @@ SEQ_SIZE = 25
 RANDOM_SEED = 11
 VALIDATION_SIZE = 0.15
 LR = 1e-3
-N_EPOCHS = 100
+N_EPOCHS = 10
 NUM_LAYERS, HIDDEN_SIZE = 1, 150
 DROPOUT_P = 0
 model_type = 'lstm'
 use_cuda = torch.cuda.is_available()
 torch.manual_seed(RANDOM_SEED)
-INPUT = 'data/music.txt'  # Music
 RESUME = False
 CHECKPOINT = 'ckpt_mdl_{}_ep_{}_hsize_{}_dout_{}'.format(model_type, N_EPOCHS, HIDDEN_SIZE, DROPOUT_P)
 
@@ -178,22 +178,20 @@ class MusicRNN(nn.Module):
         output = self.out(rnn_out.view(1,-1))
         return output
 
-def some_pass(loss_function,model,seq, target, fit=True):
+def some_pass(optimizer,loss_function,model,seq, target, fit=True):
     model.init_hidden() # Zero out the hidden layer
     model.zero_grad()   # Zero out the gradient
     some_loss = 0
 
     for i, c in enumerate(seq):
         output = model(c)
-        print(output)
-        print(target[i])
-        some_loss += loss_function(output, target[i])
+        some_loss += loss_function(output, target[i].reshape(1))
         
     if fit:
         some_loss.backward()
         optimizer.step()
     
-    return some_loss.data[0] / len(seq)
+    return some_loss.data / len(seq)
 
 def Train(vocab,songs):
     if RESUME:
@@ -229,10 +227,10 @@ def Train(vocab,songs):
     for epoch in range(start_epoch, N_EPOCHS):
         # Training
         for i, song in enumerate(songs):
-            this_loss = some_pass(loss_function,model,*song_to_seq_target(vocab,song))
+            this_loss = some_pass(optimizer,loss_function,model,*song_to_seq_target(vocab,song))
             loss += this_loss
             
-            msg = '\rTraining Epoch: {}, {:.2f}% iter: {} Time: {} Loss: {:.4}'.format(
+            msg = '\rTraining Epoch: {}, {:.2f}% iter: {} Loss: {:.4}'.format(
                 epoch, (i+1)/len(songs)*100, i, this_loss)
             sys.stdout.write(msg)
             sys.stdout.flush()
