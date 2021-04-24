@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from torch.autograd import Variable
 #import torchtext
 import time
 import math
@@ -108,15 +109,24 @@ def standardize_songs(songs):
 
 def rand_song_slice(song, slice_number, slice_length):
 	start_element_i = math.floor(random.random() * (len(song) - slice_length - 1))
-	end_element_i = start + slice_length
-	return song[start_element, end_element_i]
+	end_element_i = start_element_i + slice_length + 1
+	return song[start_element_i: end_element_i]
 
 def slice_to_tensor(vocab, slice):
-	out = torch.zeros(len(seq)).long()
+	out = torch.zeros(len(slice)).long()
+	for i,j in enumerate(slice):
+		out[i] = vocab[j]
+	return out
 
+def song_to_seq_target(vocab,song):
+    a_slice = rand_song_slice(song,0,50)
+    seq  = slice_to_tensor(vocab,a_slice[:-1])
+    target = slice_to_tensor(vocab,a_slice[1:])
+    assert(len(seq) == len(target)), 'SEQ AND TARGET MISMATCH'
+    return Variable(seq), Variable(target)
 
 if __name__ == '__main__':
 	songs = get_dataset()
 	vocab = build_vocab(songs['total'])
 	l = standardize_songs(songs["total"])
-	print("fart")
+	print(song_to_seq_target(vocab,l[0]))
