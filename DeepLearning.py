@@ -8,8 +8,6 @@ import pandas as pd
 import numpy as np
 import glob
 import pickle
-import
-from torch.autograd import Variable
 from music21 import converter, instrument, note, chord
 
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
