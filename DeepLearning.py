@@ -1,5 +1,8 @@
 import torch
 import torch.nn.functional as F
+import torch.nn as nn
+import sys
+from torch.autograd import Variable
 #import torchtext
 import time
 import math
@@ -8,7 +11,14 @@ import pandas as pd
 import numpy as np
 import glob
 import pickle
+import os
 from music21 import converter, instrument, note, chord
+import Model
+import Training
+
+NUM_LAYERS, HIDDEN_SIZE = 1, 150
+DROPOUT_P = 0
+model_type = 'lstm'
 
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
 
@@ -28,10 +38,10 @@ def get_element_str(el, includeDuration):
 
 def get_dataset(includeDuration = False, byGenre = False, regenerate = False):
 
-	fileString = "musicDataset_includeDuration=" +\
-							 str(includeDuration) +\
-							 "_byGenre=" +\
-							 str(byGenre) +\
+	fileString = "musicDataset_includeDuration=" + \
+							 str(includeDuration) + \
+							 "_byGenre=" + \
+							 str(byGenre) + \
 							 ".pickle"
 
 	# Check if this dataset is already generated
@@ -41,9 +51,9 @@ def get_dataset(includeDuration = False, byGenre = False, regenerate = False):
 			return pickle.load(previouslyGenerateDataset)
 		except:
 			print("Re/Creating Music Dataset")
-	
+
 	# Create the data set by converting all the midi files into string vectors
-	
+
 	dataset = {"total": []}
 	for genre in GENRES:
 		for file in glob.glob("./TrainingData/" + genre + "/*.mid"):
@@ -106,48 +116,16 @@ def standardize_songs(songs):
 
 	return adjusted_songs
 
-def rand_song_slice(song, slice_number, slice_length):
-	start_element_i = math.floor(random.random() * (len(song) - slice_length - 1))
-	end_element_i = start + slice_length
-	return song[start_element, end_element_i]
-
-def slice_to_tensor(vocab, slice):
-	out = torch.zeros(len(seq)).long()
-	for index, element in enumerate(slice):
-		out[i] = vocab[element]
-	return out
-
-def train_song(song, slice_length=100):
-	slice = rand_song_slice(song, slice_length=slice_length)
-	tensor = slice_to_tensor(slice)
-
-	input = tensor[:-1]
-	output = tensor[1:]
-
-	return Variable(input), Variable(output)
-
-def some_pass(seq, target):
-	model.init_hidden() # Zero out the hidden layer
-	model.zero_grad()   # Zero out the gradient
-	some_loss = 0
-
-	for i, c in enumerate(seq):
-		output = model(c)
-		some_loss += loss_function(output, target[i])
-
-	if fit:
-		some_loss.backward()
-		optimizer.step()
-
-	return some_loss.data[0] / len(seq)
-
-def train_model():
-
-
-
-
 if __name__ == '__main__':
-	songs = get_dataset()
-	vocab = build_vocab(songs['total'])
-	l = standardize_songs(songs["total"])
-	print("fart")
+	data = get_dataset()['total']
+	standard_data = standardize_songs(data)
+	vocab = build_vocab(data)
+
+	in_size, out_size = [len(vocab)]*2
+
+	loss_function = nn.CrossEntropyLoss()
+	model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, model_type, NUM_LAYERS)
+
+	t = Training.ModelTrainer(loss_function, standard_data, vocab, model)
+	t.start_training()
+	t.plot_loss()
