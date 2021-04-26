@@ -16,12 +16,12 @@ from music21 import converter, instrument, note, chord
 
 
 # CONSTS
-SAVE_EVERY = 20
+SAVE_EVERY = 5
 SEQ_SIZE = 25
 RANDOM_SEED = 11
 VALIDATION_SIZE = 0.15
 LR = 1e-3
-N_EPOCHS = 10
+N_EPOCHS = 50
 NUM_LAYERS, HIDDEN_SIZE = 1, 150
 DROPOUT_P = 0
 model_type = 'lstm'
@@ -33,7 +33,7 @@ CHECKPOINT = 'ckpt_mdl_{}_ep_{}_hsize_{}_dout_{}'.format(model_type, N_EPOCHS, H
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
 
 def get_note_str(note, duration):
-	return note.nameWithOctave + duration
+    return note.nameWithOctave + duration
 
 def get_element_str(el, includeDuration):
 	duration = "-" + str(round(float(el.quarterLength), 3)) if includeDuration else ""
@@ -209,7 +209,7 @@ def Train(vocab,songs):
         
     else:
         print('==> Building model..')
-        in_size, out_size = len(songs), len(songs)
+        in_size, out_size = len(vocab),len(vocab)
         model = MusicRNN(in_size, HIDDEN_SIZE, out_size, model_type, NUM_LAYERS)
         loss, v_loss = 0, 0
         losses, v_losses = [], []
@@ -235,7 +235,9 @@ def Train(vocab,songs):
             sys.stdout.write(msg)
             sys.stdout.flush()
         print()
-        losses.append(loss / len(songs))
+        accuracy = compute_accuracy(model,songs,vocab)
+        print(accuracy)
+        losses.append(loss/len(songs))
             
         # Validation
         # for i, song_idx in enumerate(valid_idxs):
@@ -255,22 +257,35 @@ def Train(vocab,songs):
             state = {
                 'model': model.module if use_cuda else model,
                 'loss': losses[-1],
-                'v_loss': v_losses[-1],
                 'losses': losses,
-                'v_losses': v_losses,
                 'epoch': epoch,
             }
             if not os.path.isdir('checkpoint'):
                 os.mkdir('checkpoint')
-    #         torch.save(state, './checkpoint/ckpt.t%s' % epoch)
+            torch.save(state, './checkpoint/ckpt.t%s' % epoch)
             torch.save(state, './checkpoint/' + CHECKPOINT + '.t%s' % epoch)
         
         # Reset loss
         loss, v_loss = 0, 0
 
+def compute_accuracy(model,songs,vocab):
+    with torch.no_grad():
+        correct_pred, num_examples = 0, 0
+        for song in songs:
+            features,targets = song_to_seq_target(vocab,song)
+            for i,c in enumerate(features):
+                logits = model(c)
+                _, predicted_label = torch.max(logits, 1)
+                if (predicted_label == targets[i]):
+                    correct_pred += 1
+            num_examples += targets.size(0)
+    print(correct_pred)
+    print(num_examples)
+    return (correct_pred/num_examples) * 100
+
 if __name__ == '__main__':
-	songs = get_dataset()
-	vocab = build_vocab(songs['total'])
-	l = standardize_songs(songs["total"])
-	Train(vocab,l)
+    songs = get_dataset()
+    vocab = build_vocab(songs['total'])
+    l = standardize_songs(songs["total"])
+    Train(vocab,l)
 	
