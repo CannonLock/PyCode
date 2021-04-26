@@ -15,10 +15,10 @@ import os
 from music21 import converter, instrument, note, chord
 import Model
 import Training
+import c
 
-NUM_LAYERS, HIDDEN_SIZE = 1, 150
-DROPOUT_P = 0
-model_type = 'lstm'
+NUM_LAYERS, HIDDEN_SIZE = c.NUM_LAYERS, c.HIDDEN_SIZE
+DROPOUT_P = .8
 
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 	in_size, out_size = [len(vocab)]*2
 
 	loss_function = nn.CrossEntropyLoss()
-	model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, model_type, NUM_LAYERS)
+	model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, NUM_LAYERS, DROPOUT_P)
 
 	t = Training.ModelTrainer(loss_function, standard_data, vocab, model)
 	t.start_training()

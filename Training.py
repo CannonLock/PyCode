@@ -9,26 +9,23 @@ import math
 import random
 import pandas as pd
 import numpy as np
-import glob
-import pickle
 import os
 import Model
 import matplotlib.pyplot as plt
+import c
 
 # CONSTS
-SAVE_EVERY = 5
-SEQ_SIZE = 25
-RANDOM_SEED = 11
-TRAINING_SIZE = 0.75
-VALIDATION_SIZE = 0.15
-TESTING_SIZE = 0.10
-LR = 1e-3
-N_EPOCHS = 30
-NUM_LAYERS, HIDDEN_SIZE = 1, 150
-DROPOUT_P = 0
-model_type = 'lstm'
+# MODEL
+SAVE_EVERY = c.SAVE_EVERY
+SEQ_SIZE = c.SEQ_SIZE
+RANDOM_SEED = c.RANDOM_SEED
+TRAINING_SIZE = c.TRAINING_SIZE
+VALIDATION_SIZE = c.VALIDATION_SIZE
+TESTING_SIZE = c.TESTING_SIZE
+LR = c.LR
+N_EPOCHS = c.N_EPOCHS
 torch.manual_seed(RANDOM_SEED)
-CHECKPOINT = 'ckpt_mdl_{}_ep_{}_hsize_{}_dout_{}'.format(model_type, N_EPOCHS, HIDDEN_SIZE, DROPOUT_P)
+CHECKPOINT = 'ckpt_mdl_{}_ep_{}_hsize_{}_dout_{}'.format(c.model_type, c.N_EPOCHS, c.HIDDEN_SIZE, c.DROPOUT_P)
 
 class ModelTrainer():
 
@@ -48,10 +45,18 @@ class ModelTrainer():
 		self.epoch = None
 		self.checkpoint = 0
 
-	def rand_song_slice(self, song, slice_length):
-		start_element_i = math.floor(random.random() * (len(song) - slice_length - 1))
-		end_element_i = start_element_i + slice_length + 1
+	def song_slice(self, song, slice_length, rand=False):
+
+		if rand:
+			start_element_i = math.floor(random.random() * (len(song) - slice_length - 1))
+			end_element_i = start_element_i + slice_length + 1
+
+		else:
+			start_element_i = 0
+			end_element_i = slice_length
+
 		return song[start_element_i: end_element_i]
+
 
 	def slice_to_tensor(self, slice):
 		out = torch.zeros(len(slice)).long()
@@ -60,7 +65,7 @@ class ModelTrainer():
 		return out
 
 	def song_to_seq_target(self, song):
-		a_slice = self.rand_song_slice(song, 50)
+		a_slice = self.song_slice(song, SEQ_SIZE)
 		seq = self.slice_to_tensor(a_slice[:-1])
 		target = self.slice_to_tensor(a_slice[1:])
 		assert(len(seq) == len(target)), 'SEQ AND TARGET MISMATCH'
@@ -73,7 +78,7 @@ class ModelTrainer():
 
 		output = []
 		for i, c in enumerate(seq):
-			output.append(self.model(c))
+			output.append(self.model(c.view(1)))
 
 		output = torch.cat(output)
 
@@ -90,7 +95,7 @@ class ModelTrainer():
 
 		output = []
 		for i, c in enumerate(seq):
-			output.append(self.model(c))
+			output.append(self.model(c.view(1)))
 
 		output = torch.cat(output)
 
@@ -193,7 +198,7 @@ class ModelTrainer():
 				sys.stdout.write(msg)
 				sys.stdout.flush()
 			print()
-			self.losses.append(self.loss / len(self.data))
+			self.losses.append(self.loss / len(train_indices))
 
 			for i, song_index in enumerate(validation_indices):
 				this_loss = self.validation_pass(*self.song_to_seq_target(self.data[song_index]))
@@ -208,5 +213,25 @@ class ModelTrainer():
 
 			self.save_checkpoint(epoch)
 
+			print(self.compute_accuracy(test_indices))
+
 			# Reset loss
 			self.loss, self.v_loss = 0, 0
+
+		print(self.compute_accuracy(test_indices))
+
+	def compute_accuracy(self, test_indices):
+		with torch.no_grad():
+
+			correct_pred, num_examples = 0, 0
+
+			for song_index in test_indices:
+
+				seq, target = self.song_to_seq_target(self.data[song_index])
+
+				logits = self.model(target)
+				_, predicted_labels = torch.max(logits, 1)
+
+				num_examples += target.size(0)
+				correct_pred += (predicted_labels == target).sum()
+		return correct_pred.float()/num_examples * 100
