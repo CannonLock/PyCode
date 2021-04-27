@@ -6,10 +6,10 @@ from music21 import converter, instrument, note, chord, stream
 def generate_song(model, start_note, length):
 	song = torch.tensor(start_note).view(1)
 
-	for i in length:
+	for i in range(length):
 		logits = model(song)
 		_, predicted_labels = torch.max(logits, 1)
-		song = torch.cat(song, predicted_labels[-1])
+		song = torch.cat((song.view(-1), predicted_labels[-1].view(-1)))
 
 	return song
 
@@ -28,14 +28,20 @@ def create_midi(prediction):
 			output_notes.append(new_note)
 		# pattern is a chord
 		elif ' ' in pattern:
-			new_chord = chord.Chord(pattern)
+			notes_in_chord = pattern.split(' ')
+			notes = []
+			for current_note in notes_in_chord:
+				new_note = note.Note(int(current_note))
+				new_note.storedInstrument = instrument.BassDrum()
+				notes.append(new_note)
+			new_chord = chord.Chord(notes)
 			new_chord.offset = offset
 			output_notes.append(new_chord)
 		# pattern is a note
 		else:
 			new_note = note.Note(pattern)
 			new_note.offset = offset
-			new_note.storedInstrument = instrument.Piano()
+			new_note.storedInstrument = instrument.BassDrum()
 			output_notes.append(new_note)
 
 		# increase offset each iteration so that notes do not stack

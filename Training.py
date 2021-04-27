@@ -170,7 +170,7 @@ class ModelTrainer():
 			self.losses, self.v_losses = [], []
 			self.epoch = 0
 
-	def start_training(self):
+	def test_training(self):
 
 		self.setup_training()
 
@@ -209,6 +209,26 @@ class ModelTrainer():
 			self.loss, self.v_loss = 0, 0
 
 		print(self.compute_accuracy(test_indices), "%")
+
+	def final_training(self):
+		self.setup_training()
+
+		# Train
+		for epoch in range(self.epoch, N_EPOCHS):
+			# Training
+			for i in range(len(self.data)):
+				this_loss = self.training_pass(*self.song_to_seq_target(self.data[i]))
+				self.loss += this_loss
+
+				msg = '\rTraining Epoch: {}, {:.2f}% iter: {} Loss: {:.4}'.format(
+					epoch, (i+1)/len(self.data)*100, i, this_loss)
+				sys.stdout.write(msg)
+				sys.stdout.flush()
+
+			# Reset loss
+			self.loss, self.v_loss = 0, 0
+
+		print(self.compute_accuracy(range(len(self.data))), "%")
 
 	def compute_accuracy(self, test_indices):
 		with torch.no_grad():
