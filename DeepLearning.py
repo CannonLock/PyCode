@@ -16,6 +16,7 @@ from music21 import converter, instrument, note, chord
 import Model
 import Training
 import c
+import predict
 
 NUM_LAYERS, HIDDEN_SIZE = c.NUM_LAYERS, c.HIDDEN_SIZE
 DROPOUT_P = c.DROPOUT_P
@@ -121,8 +122,6 @@ def start_composition(data):
 
 	return dict(sorted(start_dict.items(), key=lambda item: item[1]))
 
-
-
 def standardize_songs(songs):
 
 	max_song_length = max(map(len, songs))
@@ -152,5 +151,11 @@ if __name__ == '__main__':
 	model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, NUM_LAYERS, DROPOUT_P)
 
 	t = Training.ModelTrainer(loss_function, standard_data, str_to_int, model)
-	t.start_training()
-	t.plot_loss()
+	t.final_training()
+
+	# Create a song
+	for i in range(5):
+		start_note = list(start_composition(data).keys())[-i]
+		song = predict.generate_song(t.model, str_to_int[start_note], 500)
+		song_notes = predict.ints_to_notes(song, int_to_str)
+		predict.create_midi(song_notes, "test_output" + str(i) + ".mid")
