@@ -16,7 +16,7 @@ def generate_song(model, start_note, length):
 def ints_to_notes(song, int_to_str):
 	return [int_to_str[x] for x in song]
 
-def create_midi(prediction):
+def create_midi(prediction, file_path):
 	offset = 0
 	output_notes = []
 
@@ -49,6 +49,6 @@ def create_midi(prediction):
 
 	midi_stream = stream.Stream(output_notes)
 
-	midi_stream.write('midi', fp='test_output.mid')
+	midi_stream.write('midi', fp=file_path)
 
 

@@ -154,7 +154,8 @@ if __name__ == '__main__':
 	t.final_training()
 
 	# Create a song
-	start_note = list(start_composition(data).keys())[-1]
-	song = predict.generate_song(t.model, str_to_int[start_note], 500)
-	song_notes = predict.ints_to_notes(song, int_to_str)
-	predict.create_midi(song_notes)
+	for i in range(5):
+		start_note = list(start_composition(data).keys())[-i]
+		song = predict.generate_song(t.model, str_to_int[start_note], 500)
+		song_notes = predict.ints_to_notes(song, int_to_str)
+		predict.create_midi(song_notes, "test_output" + str(i) + ".mid")
