@@ -18,7 +18,7 @@ import Training
 import c
 
 NUM_LAYERS, HIDDEN_SIZE = c.NUM_LAYERS, c.HIDDEN_SIZE
-DROPOUT_P = .8
+DROPOUT_P = c.DROPOUT_P
 
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
 
@@ -87,16 +87,41 @@ def get_dataset(includeDuration = False, byGenre = False, regenerate = False):
 
 	return dataset
 
-def build_vocab(songs, includeDuration = False):
+def build_translations(songs):
 	vocab_set = set()
 	for i in songs:
 		vocab_set.update(i)
 
-	vocab_dict = {}
+	str_to_int = {}
+	int_to_str = []
 	for index, element in enumerate(sorted(vocab_set)):
-		vocab_dict[element] = index
+		str_to_int[element] = index
+		int_to_str.append(element)
 
-	return vocab_dict
+	return str_to_int, int_to_str
+
+def data_composition(data):
+	comp_dict = {}
+	for song in data:
+		for note in song:
+			if note in comp_dict:
+				comp_dict[note] += 1
+			else:
+				comp_dict[note] = 1
+
+	return dict(sorted(comp_dict.items(), key=lambda item: item[1]))
+
+def start_composition(data):
+	start_dict = {}
+	for song in data:
+		if song[0] in start_dict:
+			start_dict[song[0]] += 1
+		else:
+			start_dict[song[0]] = 1
+
+	return dict(sorted(start_dict.items(), key=lambda item: item[1]))
+
+
 
 def standardize_songs(songs):
 
@@ -119,13 +144,13 @@ def standardize_songs(songs):
 if __name__ == '__main__':
 	data = get_dataset()['total']
 	standard_data = standardize_songs(data)
-	vocab = build_vocab(data)
+	str_to_int, int_to_str = build_translations(data)
 
-	in_size, out_size = [len(vocab)]*2
+	in_size, out_size = [len(str_to_int)]*2
 
 	loss_function = nn.CrossEntropyLoss()
 	model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, NUM_LAYERS, DROPOUT_P)
 
-	t = Training.ModelTrainer(loss_function, standard_data, vocab, model)
+	t = Training.ModelTrainer(loss_function, standard_data, str_to_int, model)
 	t.start_training()
 	t.plot_loss()

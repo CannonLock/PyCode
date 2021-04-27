@@ -74,13 +74,8 @@ class ModelTrainer():
 	def training_pass(self, seq, target):
 		self.model.init_hidden() # Zero out the hidden layer
 		self.model.zero_grad()   # Zero out the gradient
-		some_loss = 0
 
-		output = []
-		for i, c in enumerate(seq):
-			output.append(self.model(c.view(1)))
-
-		output = torch.cat(output)
+		output = self.model(seq)
 
 		some_loss = self.loss_function(output, target)
 		some_loss.backward()
@@ -91,13 +86,8 @@ class ModelTrainer():
 	def validation_pass(self, seq, target):
 		self.model.init_hidden() # Zero out the hidden layer
 		self.model.zero_grad()   # Zero out the gradient
-		some_loss = 0
 
-		output = []
-		for i, c in enumerate(seq):
-			output.append(self.model(c.view(1)))
-
-		output = torch.cat(output)
+		output = self.model(seq)
 
 		some_loss = self.loss_function(output, target)
 
@@ -218,7 +208,7 @@ class ModelTrainer():
 			# Reset loss
 			self.loss, self.v_loss = 0, 0
 
-		print(self.compute_accuracy(test_indices))
+		print(self.compute_accuracy(test_indices), "%")
 
 	def compute_accuracy(self, test_indices):
 		with torch.no_grad():
@@ -231,7 +221,7 @@ class ModelTrainer():
 
 				logits = self.model(target)
 				_, predicted_labels = torch.max(logits, 1)
-
 				num_examples += target.size(0)
 				correct_pred += (predicted_labels == target).sum()
-		return correct_pred.float()/num_examples * 100
+
+		return round(float(correct_pred.float()/num_examples * 100), 2)
