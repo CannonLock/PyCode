@@ -11,10 +11,16 @@ def generate_song(model, start_note, length):
 	song = torch.tensor(start_note).view(1)
 	for i in range(length):
 		logits = model(song)
+<<<<<<< HEAD
 		#probas = torch.softmax(logits,dim = 1)
 		#probas = sample(logits/temperature,1)
 		#predicted_labels = torch.multinomial(probas,1)
 		predicted_labels = sample(logits,2)
+=======
+		probas = torch.softmax(logits, dim = 1)
+		predicted_labels = torch.multinomial(probas,1)
+		print(probas[-1][predicted_labels[-1]])
+>>>>>>> 92f15c05a26ae0a467b6a69d7c69124949626aa0
 		song = torch.cat((song.view(-1), predicted_labels[-1].view(-1)))
 		print(song)
 	return song

@@ -162,5 +162,6 @@ if __name__ == '__main__':
 		start_note = list(start_composition(data).keys())[-i]
 		song = predict.generate_song(model, str_to_int[start_note], 500)
 		song_notes = predict.ints_to_notes(song, int_to_str)
+		print(song_notes)
 		predict.create_midi(song_notes, "test_output" + str(i) + ".mid")
  
