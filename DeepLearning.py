@@ -152,10 +152,15 @@ if __name__ == '__main__':
 
 	t = Training.ModelTrainer(loss_function, standard_data, str_to_int, model)
 	t.final_training()
+	
+	#model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, NUM_LAYERS, DROPOUT_P)
+	#model.load_state_dict(torch.load('checkpoint/ckpt_mdl_lstm_ep_50_hsize_32_dout_0.9.pt'))
+	#model.eval()
 
 	# Create a song
 	for i in range(5):
 		start_note = list(start_composition(data).keys())[-i]
-		song = predict.generate_song(t.model, str_to_int[start_note], 500)
+		song = predict.generate_song(model, str_to_int[start_note], 500)
 		song_notes = predict.ints_to_notes(song, int_to_str)
 		predict.create_midi(song_notes, "test_output" + str(i) + ".mid")
+ 

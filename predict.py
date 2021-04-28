@@ -2,16 +2,21 @@ import c
 import torch
 from music21 import converter, instrument, note, chord, stream
 
+def sample(preds, temperature=2.0):
+    # helper function to sample an index from a probability array
+    probas = torch.softmax(preds/temperature, 1)
+    return torch.multinomial(probas,1)
 
 def generate_song(model, start_note, length):
 	song = torch.tensor(start_note).view(1)
-
 	for i in range(length):
 		logits = model(song)
-		probas = torch.softmax(logits,dim = 0)
-		predicted_labels = torch.multinomial(probas,1)
+		#probas = torch.softmax(logits,dim = 1)
+		#probas = sample(logits/temperature,1)
+		#predicted_labels = torch.multinomial(probas,1)
+		predicted_labels = sample(logits,2)
 		song = torch.cat((song.view(-1), predicted_labels[-1].view(-1)))
-
+		print(song)
 	return song
 
 def ints_to_notes(song, int_to_str):
