@@ -200,10 +200,12 @@ class ModelTrainer():
 				sys.stdout.flush()
 			print()
 			self.v_losses.append(self.v_loss / len(validation_indices))
-
+			print('Train Accuracy: ' + str(self.compute_accuracy(train_indices)))
 			self.save_checkpoint(epoch)
 
-			print(self.compute_accuracy(test_indices))
+			print('Test Accuracy: ' + str(self.compute_accuracy(test_indices)))
+
+			print('Validation Accuracy: ' + str(self.compute_accuracy(validation_indices)))
 
 			# Reset loss
 			self.loss, self.v_loss = 0, 0

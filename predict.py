@@ -8,7 +8,8 @@ def generate_song(model, start_note, length):
 
 	for i in range(length):
 		logits = model(song)
-		_, predicted_labels = torch.max(logits, 1)
+		probas = torch.softmax(logits,dim = 0)
+		predicted_labels = torch.multinomial(probas,1)
 		song = torch.cat((song.view(-1), predicted_labels[-1].view(-1)))
 
 	return song

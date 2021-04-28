@@ -24,7 +24,7 @@ DROPOUT_P = c.DROPOUT_P
 GENRES = ["Blues", "Country", "Indie", "Jazz", "Pop", "Psychedelic Rock", "Rock", "Soul"]
 
 def get_note_str(note, duration):
-	return note.nameWithOctave + duration
+    return note.nameWithOctave + duration
 
 def get_element_str(el, includeDuration):
 	duration = "-" + str(round(float(el.quarterLength), 3)) if includeDuration else ""
