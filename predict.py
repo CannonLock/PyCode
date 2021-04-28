@@ -31,7 +31,7 @@ def create_midi(prediction, file_path):
 			notes_in_chord = pattern.split(' ')
 			notes = []
 			for current_note in notes_in_chord:
-				new_note = note.Note(int(current_note))
+				new_note = note.Note(current_note)
 				new_note.storedInstrument = instrument.BassDrum()
 				notes.append(new_note)
 			new_chord = chord.Chord(notes)
