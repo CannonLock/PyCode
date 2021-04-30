@@ -2,7 +2,7 @@ import c
 import torch
 from music21 import converter, instrument, note, chord, stream
 
-def sample(preds, temperature=2.0):
+def sample(preds, temperature=1):
     # helper function to sample an index from a probability array
     probas = torch.softmax(preds/temperature, 1)
     return torch.multinomial(probas,1)
