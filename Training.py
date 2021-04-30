@@ -211,6 +211,7 @@ class ModelTrainer():
 			self.loss, self.v_loss = 0, 0
 
 		print(self.compute_accuracy(test_indices), "%")
+		self.plot_loss()
 
 	def final_training(self):
 		self.setup_training()

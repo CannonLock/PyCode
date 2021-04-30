@@ -143,6 +143,7 @@ def standardize_songs(songs):
 if __name__ == '__main__':
 	data = get_dataset()['total']
 	standard_data = standardize_songs(data)
+	start_composition(data)
 	str_to_int, int_to_str = build_translations(data)
 
 	in_size, out_size = [len(str_to_int)]*2
@@ -150,8 +151,8 @@ if __name__ == '__main__':
 	loss_function = nn.CrossEntropyLoss()
 	model = Model.MusicRNN(in_size, HIDDEN_SIZE, out_size, NUM_LAYERS, DROPOUT_P)
 
-	t = Training.ModelTrainer(loss_function, standard_data, str_to_int, model)
-	t.final_training()
+	t = Training.ModelTrainer(loss_function, data, str_to_int, model)
+	t.test_training()
 
 	# Create a song
 	for i in range(5):
